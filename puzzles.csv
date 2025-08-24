@@ -1,0 +1,3 @@
+id,title,language,level,difficulty,rows,cols,notes,photo,created_at
+1,Test Puzzle 1,ro,1,easy,10,10,"This is a Romanian easy puzzle",,
+2,Test Puzzle 2,en,2,hard,12,12,"English hard puzzle","",2025-08-17 10:00:00
