@@ -1,6 +1,8 @@
 // src/stores/game.ts
+
 import { defineStore } from 'pinia'
 import type { PersistenceOptions } from 'pinia-plugin-persistedstate'
+import { api } from 'src/boot/axios'
 
 const STEP_MS = 5 * 60 * 1000
 
@@ -55,11 +57,21 @@ export const useGame = defineStore('game', {
     canUseHeart() {
       return this.hearts > 0 && !this.onCooldown
     },
-    useHeart() {
+    async useHeart() {
       if (!this.canUseHeart()) return false
       this.hearts = Math.max(0, this.hearts - 1)
       if (this.cooldownEnd === 0) this.cooldownEnd = Date.now() + this.stepMs
       this.addXp(25)
+      // Sincronizează progresul cu backend-ul după folosirea unei inimi
+      try {
+        await api.post('auth/update-progress/', {
+          xp: this.xp,
+          level: this.level,
+          diamonds: this.diamonds,
+        })
+      } catch {
+        // Ignoră erorile de rețea pentru a nu bloca jocul
+      }
       return true
     },
     applyOfflineRecovery() {

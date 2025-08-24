@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from accounts.views import RegisterView, LoginView, MeView
+from accounts.views import RegisterView, LoginView, MeView, UpdateProgressView
 from rest_framework.routers import DefaultRouter
 from crosswords.views import PuzzleViewSet
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -27,6 +27,7 @@ urlpatterns = [
     path("api/auth/login/",    LoginView.as_view()),
     path("api/auth/me/",       MeView.as_view()),
     path("api/auth/token/refresh/", TokenRefreshView.as_view()),
+     path("auth/update-progress/", UpdateProgressView.as_view(), name="update-progress"),
 ]
 router = DefaultRouter()
 router.register(r"puzzles", PuzzleViewSet, basename="puzzle")

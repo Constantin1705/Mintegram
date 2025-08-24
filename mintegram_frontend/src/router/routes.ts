@@ -20,10 +20,12 @@ const routes = [
     children: [
       // Dacă homepage-ul tău e public, marchează-l public; dacă vrei să fie protejat, scoate meta.public
       { path: '', name: 'home', component: () => import('pages/HomePage.vue') }, // protejat implicit
+      { path: 'profile', name: 'profile', component: () => import('pages/ProfilePage.vue') }, // protejat implicit
       // exemple publice:
       { path: 'integrame', component: () => import('pages/IntegrameList.vue'), meta: { public: true } },
       { path: 'integrame/:id', component: () => import('pages/IntegramePlay.vue'), meta: { public: true } },
       { path: 'hearts', component: () => import('pages/HeartsPage.vue'), meta: { public: true } },
+      { path: 'map', component: () => import('pages/LevelMap.vue'), meta: { public: true } },
     ],
   },
 

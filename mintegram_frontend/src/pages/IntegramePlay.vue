@@ -219,7 +219,7 @@ function selectClue(cl: Clue, dir: 'across' | 'down') {
 }
 
 onMounted(async () => {
-  const { data } = await api.get<Puzzle>(`/puzzles/${id}/`)
+  const { data } = await api.get<Puzzle>(`/api/puzzles/${id}/`)
   puzzle.value = data
   for (const c of data.cells) {
     if (!c.is_block) {

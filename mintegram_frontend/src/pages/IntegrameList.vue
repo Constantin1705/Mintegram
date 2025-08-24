@@ -98,8 +98,9 @@ function extractDetail (e: unknown): string {
 
 onMounted(async () => {
   try {
-    const { data } = await api.get<PuzzleListItem[]>('/puzzles/')
+    const { data } = await api.get<PuzzleListItem[]>('/api/puzzles/')
     puzzles.value = data
+    console.log('Puzzles loaded:', data)
   } catch (e) {
     error.value = extractDetail(e)
   } finally {

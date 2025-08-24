@@ -11,13 +11,13 @@ export const useAuth = defineStore('auth', {
   }),
   actions: {
     async login(user: string, password: string) {
-      const { data } = await api.post('/auth/login/', { user, password })
+      const { data } = await api.post('/api/auth/login/', { user, password })
       this.access = data.access
       this.refresh = data.refresh
       LocalStorage.set('access', data.access)
       LocalStorage.set('refresh', data.refresh)
       api.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
-      // opțional: this.user = await this.fetchMe()
+      await this.fetchMe()
     },
     logout() {
       this.access = null
@@ -27,6 +27,14 @@ export const useAuth = defineStore('auth', {
       LocalStorage.remove('refresh')
       delete api.defaults.headers.common['Authorization']
     },
-    // async fetchMe() { ... }
+
+    async fetchMe() {
+      try {
+        const { data } = await api.get('/api/auth/me/')
+        this.user = data
+      } catch {
+        this.user = null
+      }
+    },
   }
 })

@@ -64,11 +64,11 @@ import { mmss } from 'src/utils/time'
 const $q = useQuasar()
 const game = useGame()
 
-function useOne() {
-  if (game.useHeart()) {
+async function useOne() {
+  if (await game.useHeart()) {
     $q.notify({ type: 'positive', message: 'Ai folosit o inimă! ⏳ 5:00 recuperare' })
   } else {
-    $q.notify({ type: 'warning', message: game.onCooldown ? 'În cooldown...' : 'Nu mai ai inimi' })
+    $q.notify({ type: 'warning', message: game.onCooldown ? 'În cooldown...' : 'Nu ai suficiente inimi!' })
   }
 }
 
