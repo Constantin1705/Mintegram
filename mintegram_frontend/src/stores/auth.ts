@@ -7,7 +7,7 @@ export const useAuth = defineStore('auth', {
   state: () => ({
     access: LocalStorage.getItem<string>('access'),
     refresh: LocalStorage.getItem<string>('refresh'),
-    user: null as { id:number; username:string; email:string } | null,
+    user: null
   }),
   actions: {
     async login(user: string, password: string) {
@@ -26,6 +26,10 @@ export const useAuth = defineStore('auth', {
       LocalStorage.remove('access')
       LocalStorage.remove('refresh')
       delete api.defaults.headers.common['Authorization']
+      console.log('[AuthStore] logout called, tokens removed:', {
+        access: LocalStorage.getItem('access'),
+        refresh: LocalStorage.getItem('refresh')
+      })
     },
 
     async fetchMe() {

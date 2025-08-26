@@ -1,34 +1,49 @@
-
 <template>
   <q-layout view="lHh Lpr lFf">
     <!-- DRAWER -->
     <q-drawer v-model="drawer" show-if-above bordered>
       <q-list>
-        <q-item clickable v-ripple to="/" exact>
-          <q-item-section avatar><q-icon name="home" /></q-item-section>
-          <q-item-section>Acasă</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple to="/profile">
-          <q-item-section avatar><q-icon name="person" /></q-item-section>
-          <q-item-section>Profil</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple to="/hearts">
-          <q-item-section avatar><q-icon name="favorite" /></q-item-section>
-          <q-item-section>Inimioare</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple to="/map">
-          <q-item-section avatar><q-icon name="map" /></q-item-section>
-          <q-item-section>Hartă niveluri</q-item-section>
-        </q-item>
-        <q-item clickable v-ripple to="/settings">
-          <q-item-section avatar><q-icon name="settings" /></q-item-section>
-          <q-item-section>Setări</q-item-section>
-        </q-item>
-        <q-separator />
-        <q-item clickable v-ripple @click="logout">
-          <q-item-section avatar><q-icon name="logout" /></q-item-section>
-          <q-item-section>Logout</q-item-section>
-        </q-item>
+        <template v-if="auth.user">
+          <q-item clickable v-ripple to="/" exact>
+            <q-item-section avatar><q-icon name="home" /></q-item-section>
+            <q-item-section>Acasă</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/profile">
+            <q-item-section avatar><q-icon name="person" /></q-item-section>
+            <q-item-section>Profil</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/hearts">
+            <q-item-section avatar><q-icon name="favorite" /></q-item-section>
+            <q-item-section>Inimioare</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/map">
+            <q-item-section avatar><q-icon name="map" /></q-item-section>
+            <q-item-section>Hartă niveluri</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/settings">
+            <q-item-section avatar><q-icon name="settings" /></q-item-section>
+            <q-item-section>Setări</q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item clickable v-ripple @click="logout">
+            <q-item-section avatar><q-icon name="logout" /></q-item-section>
+            <q-item-section>Logout</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/subscriptions">
+            <q-item-section avatar><q-icon name="subscriptions" /></q-item-section>
+            <q-item-section>Abonamente</q-item-section>
+          </q-item>
+        </template>
+        <template v-else>
+          <q-item clickable v-ripple to="/login">
+            <q-item-section avatar><q-icon name="login" /></q-item-section>
+            <q-item-section>Login</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/signup">
+            <q-item-section avatar><q-icon name="person_add" /></q-item-section>
+            <q-item-section>Sign Up</q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-drawer>
 
@@ -84,19 +99,63 @@
           <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         <q-card-section>
-          <div v-if="loadingSubs" class="q-mb-md"><q-spinner size="2em" color="primary" /></div>
+          <div v-if="loadingSubs" class="q-mb-md">
+            <q-spinner size="2em" color="primary" />
+          </div>
           <div v-else>
-            <q-list>
-              <q-item v-for="sub in subscriptions" :key="sub.id" clickable>
-                <q-item-section>
-                  <div class="text-subtitle1">{{ sub.name }}</div>
-                  <div class="text-caption text-grey-7">{{ sub.description }}</div>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn color="primary" label="Cumpără {{ sub.price }} RON" @click="buySubscription(sub)" />
-                </q-item-section>
-              </q-item>
-            </q-list>
+            <div class="row q-col-gutter-md">
+              <div
+                v-for="sub in subscriptions"
+                :key="sub.id"
+                class="col-12 col-md-6"
+              >
+                <q-card
+                  class="q-mb-md subscription-card"
+                  :class="{
+                    'bg-pink-1': dialogType === 'hearts',
+                    'bg-blue-1': dialogType === 'diamonds'
+                  }"
+                  flat
+                  bordered
+                >
+                  <q-card-section>
+                    <div class="row items-center">
+                      <q-icon
+                        :name="dialogType === 'hearts' ? 'favorite' : 'diamond'"
+                        :color="dialogType === 'hearts' ? 'red' : 'blue-7'"
+                        size="32px"
+                        class="q-mr-md"
+                      />
+                      <div>
+                        <div class="text-h6 text-weight-bold">{{ sub.name }}</div>
+                        <div class="text-caption text-grey-7 q-mb-sm">{{ sub.description }}</div>
+                      </div>
+                    </div>
+                    <div class="text-subtitle2 q-mt-md">
+                      <q-badge
+                        :color="dialogType === 'hearts' ? 'red' : 'blue-7'"
+                        text-color="white"
+                        class="q-pa-sm"
+                        style="font-size:1.1em"
+                      >
+                        {{ sub.price }} RON
+                      </q-badge>
+                    </div>
+                  </q-card-section>
+                  <q-separator />
+                  <q-card-actions align="right">
+                    <q-btn
+                      color="primary"
+                      label="Cumpără"
+                      @click="buySubscription(sub)"
+                      unelevated
+                      class="q-px-lg"
+                      :ripple="true"
+                    />
+                  </q-card-actions>
+                </q-card>
+              </div>
+            </div>
           </div>
         </q-card-section>
       </q-card>
@@ -124,6 +183,7 @@ import { mmss } from 'src/utils/time'
 import { useAuth } from 'stores/auth'
 import { useRouter } from 'vue-router'
 import { api } from 'src/boot/axios'
+import { loadStripe } from '@stripe/stripe-js'
 
 const game = useGame()
 const auth = useAuth()
@@ -161,10 +221,17 @@ async function fetchSubscriptions(type: 'hearts'|'diamonds') {
   }
 }
 
-function buySubscription(sub: Subscription) {
-  // Aici va fi logica Stripe (urmează să fie adăugată)
-  alert(`Stripe payment pentru ${sub.name}`)
-}
+
+
+// async function buySubscription(sub: Subscription) {
+//   const { data } = await api.post('/api/subscriptions/create-stripe-session/', {
+//     subscription_id: sub.id
+//   })
+  // const stripe = await stripePromise
+  // if (stripe) {
+  //   await stripe.redirectToCheckout({ sessionId: data.sessionId })
+  // }
+// }
 
 function logout() {
   auth.logout()
@@ -172,13 +239,30 @@ function logout() {
 }
 
 let timer: number | undefined
-onMounted(() => {
+onMounted(async () => {
   game.init()
   timer = window.setInterval(() => game.tick(), 250)
+  // Verificare automată token la inițializare
+  if (auth.access) {
+    await auth.fetchMe()
+    if (!auth.user) {
+      auth.logout()
+      // opțional: router.push('/login') dacă vrei redirect instant
+    }
+  }
 })
 onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
 .cursor-pointer { cursor: pointer; }
+.subscription-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+.subscription-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 8px 24px 0 rgba(0,0,0,0.18);
+  z-index: 2;
+}
 </style>

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "accounts",
     "import_export",
     "crosswords",
+    "subscriptions",
 ]
 
 MIDDLEWARE = [
@@ -151,3 +152,4 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:9000",   # Quasar dev
 ]
+

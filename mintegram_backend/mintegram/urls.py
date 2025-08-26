@@ -27,7 +27,8 @@ urlpatterns = [
     path("api/auth/login/",    LoginView.as_view()),
     path("api/auth/me/",       MeView.as_view()),
     path("api/auth/token/refresh/", TokenRefreshView.as_view()),
-     path("auth/update-progress/", UpdateProgressView.as_view(), name="update-progress"),
+    path("auth/update-progress/", UpdateProgressView.as_view(), name="update-progress"),
+    path('api/', include('subscriptions.urls')),
 ]
 router = DefaultRouter()
 router.register(r"puzzles", PuzzleViewSet, basename="puzzle")

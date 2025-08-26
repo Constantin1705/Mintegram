@@ -33,8 +33,12 @@ export default function () {
       delete api.defaults.headers.common['Authorization']
     }
 
-    // 3) Public / privat
-    const isPublic = to.meta?.public === true
+    // 3) Public / privat (default: protected if meta.public !== true)
+    // For nested routes, check the matched array for any meta.public === true
+    const isPublic = to.matched.some(record => record.meta && record.meta.public === true)
+
+    // DEBUG: vezi tokenul și isPublic la fiecare navigare
+    console.log('[RouterGuard] token:', token, '| isPublic:', isPublic, '| to:', to.fullPath)
 
     // 4) Dacă e logat și merge spre /login => du-l la redirect sau /
     if (token && (to.path === '/login' || to.name === 'login')) {
@@ -45,7 +49,7 @@ export default function () {
     // 5) Dacă ruta NU e publică și nu există token => la /login cu redirect în query
     if (!isPublic && !token) {
       return {
-        path: '/login',
+        path: '/',
         query: { redirect: to.fullPath },
         replace: true,
       }

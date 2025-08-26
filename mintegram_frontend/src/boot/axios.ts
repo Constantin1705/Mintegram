@@ -26,27 +26,24 @@ api.interceptors.request.use((config) => {
 });
 
 
-// Redirect to login on 401 Unauthorized (session expired)
-import router from 'src/router';
-import { useAuth } from 'src/stores/auth';
+import { useAuth } from 'src/stores/auth'
+import { useRouter } from 'vue-router'
+
 api.interceptors.response.use(
   response => response,
   error => {
     if (error.response && error.response.status === 401) {
-      // Folosește store-ul pentru logout reactiv
-      const auth = useAuth();
-      if (auth.logout) auth.logout();
-      // Redirect la login
-      const routerInstance = typeof router === 'function' ? router() : router;
-      const current = routerInstance.currentRoute?.value?.fullPath || '/';
-      routerInstance.push({ path: '/login', query: { redirect: current } }).catch(() => {});
+      // Always get fresh store and router instances
+      const auth = useAuth()
+      auth.logout()
+      const router = useRouter()
+      // Save current path for redirect after login
+      const current = router.currentRoute.value.fullPath
+      if (current !== '/login') {
+        router.push({ path: '/login', query: { redirect: current } }).catch(() => {})
+      }
     }
-    // Ensure rejection reason is always an Error instance
-    if (error instanceof Error) {
-      return Promise.reject(error);
-    } else {
-      return Promise.reject(new Error(typeof error === 'string' ? error : JSON.stringify(error)));
-    }
+    return Promise.reject(error instanceof Error ? error : new Error(error?.message || String(error)))
   }
 );
 

@@ -11,6 +11,7 @@ python-dotenv = "*"
 django-import-export = "*"
 pillow = "*"
 djangorestframework-simplejwt = "*"
+stripe = "*"
 
 [dev-packages]
 
