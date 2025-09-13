@@ -147,7 +147,7 @@
                     <q-btn
                       color="primary"
                       label="Cumpără"
-                      @click="buySubscription(sub)"
+                        @click="() => $q.notify({ type: 'positive', message: `Ai cumpărat abonamentul ${sub.name}!` })"
                       unelevated
                       class="q-px-lg"
                       :ripple="true"
@@ -183,7 +183,7 @@ import { mmss } from 'src/utils/time'
 import { useAuth } from 'stores/auth'
 import { useRouter } from 'vue-router'
 import { api } from 'src/boot/axios'
-import { loadStripe } from '@stripe/stripe-js'
+
 
 const game = useGame()
 const auth = useAuth()
@@ -224,13 +224,20 @@ async function fetchSubscriptions(type: 'hearts'|'diamonds') {
 
 
 // async function buySubscription(sub: Subscription) {
-//   const { data } = await api.post('/api/subscriptions/create-stripe-session/', {
-//     subscription_id: sub.id
-//   })
-  // const stripe = await stripePromise
-  // if (stripe) {
-  //   await stripe.redirectToCheckout({ sessionId: data.sessionId })
-  // }
+//   try {
+//     const { data } = await api.post('/api/subscriptions/create-stripe-session/', {
+//       subscription_id: sub.id
+//     })
+//     // If you have Stripe integration, redirect to checkout here
+//     // const stripe = await stripePromise
+//     // if (stripe) {
+//     //   await stripe.redirectToCheckout({ sessionId: data.sessionId })
+//     // }
+//     window.location.href = data.checkout_url || '/'; // fallback redirect
+//   } catch (e) {
+//     // handle error, e.g. show notification
+//     console.error('Failed to buy subscription', e)
+//   }
 // }
 
 function logout() {

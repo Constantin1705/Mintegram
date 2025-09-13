@@ -1,3 +1,5 @@
+# Prevent Django from redirecting non-slash URLs and losing POST data
+APPEND_SLASH = False
 """
 Django settings for mintegram project.
 
@@ -149,7 +151,5 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:9000",   # Quasar dev
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
