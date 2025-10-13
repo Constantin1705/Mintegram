@@ -12,6 +12,7 @@ django-import-export = "*"
 pillow = "*"
 djangorestframework-simplejwt = "*"
 stripe = "*"
+openpyxl = "*"
 
 [dev-packages]
 

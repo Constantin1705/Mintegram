@@ -34,6 +34,7 @@ class MeView(generics.RetrieveAPIView):
 class UpdateProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+
     def post(self, request):
         user = request.user
         xp = request.data.get("xp")
@@ -48,11 +49,18 @@ class UpdateProgressView(APIView):
             user.diamonds = diamonds
 
         user.save()
+        # Verifică și acordă badge-uri după update
+        user.check_and_assign_badges()
+
+        # Serializare badge-uri actualizate
+        from .serializers import BadgeSerializer
+        badges = BadgeSerializer(user.badges.all(), many=True).data
 
         return Response({
             "xp": user.xp,
             "level": user.level,
             "diamonds": user.diamonds,
+            "badges": badges,
         }, status=status.HTTP_200_OK)
 
 

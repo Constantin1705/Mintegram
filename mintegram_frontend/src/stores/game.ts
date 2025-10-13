@@ -6,6 +6,13 @@ import { api } from 'src/boot/axios'
 
 const STEP_MS = 5 * 60 * 1000
 
+type Badge = {
+  id: number
+  name: string
+  description: string
+  icon: string | null
+}
+
 type GameState = {
   hearts: number
   maxHearts: number
@@ -14,6 +21,8 @@ type GameState = {
   xp: number
   level: number
   diamonds: number
+  badges: Badge[]
+  newBadge: Badge | null
   _now: number // volatil; NU-l persistăm
 }
 
@@ -26,6 +35,8 @@ export const useGame = defineStore('game', {
     xp: 0,
     level: 1,
     diamonds: 0,
+    badges: [],
+    newBadge: null,
     _now: Date.now(),
   }),
 
@@ -46,8 +57,52 @@ export const useGame = defineStore('game', {
   },
 
   actions: {
-    init() {
+    async addXpAndSync(n: number) {
+      this.addXp(n)
+      try {
+        const { data } = await api.post('auth/update-progress/', {
+          xp: this.xp,
+          level: this.level,
+          diamonds: this.diamonds,
+        })
+        console.log('update-progress response:', data)
+        if (data) {
+          if (typeof data.xp === 'number') this.xp = data.xp
+          if (typeof data.level === 'number') this.level = data.level
+          if (typeof data.diamonds === 'number') this.diamonds = data.diamonds
+          if (Array.isArray(data.badges)) {
+            // Detectează badge nou
+            const oldIds = new Set(this.badges.map((b: Badge) => b.id))
+            const newBadges = data.badges.filter((b: Badge) => !oldIds.has(b.id))
+            if (newBadges.length > 0) {
+              this.newBadge = newBadges[0]
+            } else {
+              this.newBadge = null
+            }
+            this.badges = data.badges
+          }
+        }
+      } catch {
+        // Ignoră erorile de rețea
+      }
+    },
+    syncWithUser(user: { xp: number; level: number; diamonds: number }) {
+      this.xp = user.xp
+      this.level = user.level
+      this.diamonds = user.diamonds
+    },
+    async init() {
       this._now = Date.now()
+      try {
+        const { data } = await api.get('/api/auth/me/')
+        if (data && typeof data.xp === 'number' && typeof data.level === 'number' && typeof data.diamonds === 'number') {
+          this.xp = data.xp
+          this.level = data.level
+          this.diamonds = data.diamonds
+        }
+      } catch {
+        // Ignoră erorile de rețea, folosește valorile locale
+      }
       this.applyOfflineRecovery()
     },
     tick() {
@@ -64,11 +119,22 @@ export const useGame = defineStore('game', {
       this.addXp(25)
       // Sincronizează progresul cu backend-ul după folosirea unei inimi
       try {
-        await api.post('auth/update-progress/', {
+        const { data } = await api.post('auth/update-progress/', {
           xp: this.xp,
           level: this.level,
           diamonds: this.diamonds,
         })
+        // Debug: vezi ce răspuns primești de la backend
+        console.log('update-progress response:', data)
+        // Actualizează store-ul cu valorile returnate de backend
+        if (data && typeof data.xp === 'number' && typeof data.level === 'number' && typeof data.diamonds === 'number') {
+          this.xp = data.xp
+          this.level = data.level
+          this.diamonds = data.diamonds
+        }
+        // Sincronizează userul global după update
+        const { useAuth } = await import('./auth')
+        await useAuth().fetchMe()
       } catch {
         // Ignoră erorile de rețea pentru a nu bloca jocul
       }

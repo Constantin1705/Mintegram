@@ -43,7 +43,7 @@
               unelevated
               rounded
             />
-            <q-btn label="+25 XP" outline color="amber-8" @click="game.addXp(25)" />
+            <q-btn label="+25 XP" outline color="amber-8" @click="game.addXpAndSync(25)" />
           </div>
 
           <div v-if="!game.canUseHeart()" class="text-negative q-mt-md">
@@ -52,17 +52,86 @@
         </q-card>
       </div>
     </div>
+
+    <!-- Pop-up badge nou -->
+    <q-dialog v-model="showBadgeDialog" persistent transition-show="jump-down" transition-hide="jump-up">
+      <q-card class="q-pa-lg flex flex-center badge-popup-card" style="min-width:320px;max-width:90vw;">
+        <div class="column items-center q-gutter-md">
+          <q-avatar size="100px" v-if="game.newBadge?.icon" class="badge-avatar">
+            <img :src="badgeImgUrl(game.newBadge.icon) || ''" alt="badge" style="object-fit:contain;" />
+          </q-avatar>
+          <div class="text-h5 text-weight-bold text-center text-primary">Felicitări!</div>
+          <div class="text-h6 text-center text-accent">Ai primit un nou badge:</div>
+          <div class="text-h5 text-weight-bold text-center q-mb-xs">{{ game.newBadge?.name }}</div>
+          <div class="text-subtitle2 text-center text-grey-8">{{ game.newBadge?.description }}</div>
+          <q-btn color="accent" label="OK" @click="closeBadgeDialog" class="q-mt-md" rounded unelevated />
+        </div>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+// Setează URL absolut pentru imaginea badge-ului dacă e relativă
+function badgeImgUrl(icon: string|null): string|undefined {
+  if (!icon) return undefined
+  if (icon.startsWith('http://') || icon.startsWith('https://')) return icon
+  // Dacă nu începe cu /media/, prefixează-l
+  let path = icon
+  if (!icon.startsWith('/media/')) {
+    path = '/media/' + icon.replace(/^\/*/, '')
+  }
+  return `http://localhost:8000${path}`
+}
+// Stiluri pentru pop-up colorat
+// Poți muta în <style scoped> dacă vrei
+const badgePopupStyle = `
+.badge-popup-card {
+  background: linear-gradient(135deg, #fceabb 0%, #f8b500 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+  border: 3px solid #f8b500;
+  animation: badge-pop 0.5s cubic-bezier(.68,-0.55,.27,1.55);
+}
+.badge-avatar {
+  box-shadow: 0 0 0 6px #fff, 0 4px 24px 0 #f8b50099;
+  background: #fff;
+  animation: badge-bounce 0.7s;
+}
+@keyframes badge-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  80% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes badge-bounce {
+  0% { transform: scale(0.5); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+`
+if (typeof window !== 'undefined' && !document.getElementById('badge-popup-style')) {
+  const style = document.createElement('style')
+  style.id = 'badge-popup-style'
+  style.innerHTML = badgePopupStyle
+  document.head.appendChild(style)
+}
 import { useQuasar } from 'quasar'
 import { useGame } from 'stores/game'
 import { mmss } from 'src/utils/time'
 
 const $q = useQuasar()
 const game = useGame()
+const showBadgeDialog = ref(false)
+
+watch(() => game.newBadge, (val) => {
+  showBadgeDialog.value = !!val
+})
+
+function closeBadgeDialog() {
+  game.newBadge = null
+  showBadgeDialog.value = false
+}
 
 async function useOne() {
   if (await game.useHeart()) {

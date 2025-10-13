@@ -36,6 +36,9 @@ export const useAuth = defineStore('auth', {
       try {
         const { data } = await api.get('/api/auth/me/')
         this.user = data
+        // Sincronizează store-ul game cu userul actualizat
+        const { useGame } = await import('./game')
+        useGame().syncWithUser(data)
       } catch {
         this.user = null
       }
