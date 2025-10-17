@@ -1,13 +1,25 @@
 // stores/auth.ts
+
 import { defineStore } from 'pinia'
 import { LocalStorage } from 'quasar'
 import { api } from 'boot/axios'
+
+export type User = {
+  id: number
+  username: string
+  email: string
+  xp: number
+  level: number
+  diamonds: number
+  coins: number
+  // adaugă aici alte câmpuri relevante
+}
 
 export const useAuth = defineStore('auth', {
   state: () => ({
     access: LocalStorage.getItem<string>('access'),
     refresh: LocalStorage.getItem<string>('refresh'),
-    user: null
+  user: null as User | null
   }),
   actions: {
     async login(user: string, password: string) {
@@ -35,7 +47,7 @@ export const useAuth = defineStore('auth', {
     async fetchMe() {
       try {
         const { data } = await api.get('/api/auth/me/')
-        this.user = data
+  this.user = data as User
         // Sincronizează store-ul game cu userul actualizat
         const { useGame } = await import('./game')
         useGame().syncWithUser(data)

@@ -8,17 +8,15 @@
           v-for="c in puzzle.cells"
           :key="`cell-${c.row}-${c.col}`"
           class="cell"
-          :class="{ block: c.is_block, active: isHighlighted(c) }"
+          :class="{ block: c.is_block, active: isHighlighted(c), selected: isHighlighted(c) }"
           :style="{ gridRow: c.row, gridColumn: c.col }"
         >
-          <small v-if="c.number" class="num">{{ c.number }}</small>
-          <div v-if="startClues(c).length" class="arrows">
-            <span v-for="cl in startClues(c)"
-                  :key="cl.number + cl.direction"
-                  class="arrow">
-              {{ arrowSymbol(cl.direction) }}
-            </span>
-          </div>
+          <span v-if="c.number && startClues(c).length" class="num-arrow" @click.stop="onNumberArrowClick(c)">
+            <span class="num">{{ c.number }}</span>
+            <span class="arrow">{{ arrowSymbol(clueDirectionForCellNumber(c) || '') }}</span>
+          </span>
+
+          <small v-else-if="c.number" class="num">{{ c.number }}</small>
           <input v-if="!c.is_block"
                 :data-key="keyOf(c)"
                 maxlength="1"
@@ -118,6 +116,28 @@ function startOfWord(c: Cell, dir: 'across'|'down') {
   }
   return { row: r, col: cl }
 }
+// Returnează direcția clue-ului care începe la această celulă și are același number
+function clueDirectionForCellNumber(c: Cell): string | undefined {
+  if (!puzzle.value || !c.number) return undefined
+  const clue = puzzle.value.clues.find(cl => cl.start_row === c.row && cl.start_col === c.col && cl.number === c.number)
+  return clue?.direction
+}
+
+// Selectează clue-ul asociat cu celula cu număr și săgeată
+function onNumberArrowClick(c: Cell) {
+  if (!puzzle.value || !c.number) return
+  const clue = puzzle.value.clues.find(cl => cl.start_row === c.row && cl.start_col === c.col && cl.number === c.number)
+  if (clue) {
+    selectedClue.value = clue
+    currentDirection.value = clue.direction
+    // Focus pe prima celulă a indiciului
+    const first = cellsForClue(clue)[0]
+    if (first) {
+      const el = document.querySelector<HTMLInputElement>(`[data-key='${first.row}-${first.col}']`)
+      el?.focus()
+    }
+  }
+}
 
 function clueForCellAndDir(c: Cell, dir: 'across'|'down'): Clue | null {
   if (!puzzle.value) return null
@@ -141,7 +161,8 @@ function onCellInput(c: Cell, e: Event) {
   }
   input.value = input.value.toUpperCase()
   letters.value[keyOf(c)] = input.value
-  if (selectedClue.value) {
+  // Mută doar dacă celula face parte din selectedClue
+  if (selectedClue.value && cellsForClue(selectedClue.value).some(x => x.row === c.row && x.col === c.col)) {
     moveToNextCell(c, selectedClue.value)
   }
 }
@@ -249,6 +270,10 @@ onMounted(async () => {
 }
 .cell.block { background: #111; }
 .cell.active { outline: 2px solid #027be3; }
+.cell.selected {
+  background: #ffe066 !important;
+  box-shadow: 0 0 0 2px #ffd700;
+}
 .cell input {
   width: 100%; height: 100%; border: none; outline: none;
   text-transform: uppercase; text-align: center; font-weight: 700; font-size: 18px;

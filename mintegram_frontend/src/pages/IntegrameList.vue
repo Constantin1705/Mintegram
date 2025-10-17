@@ -11,7 +11,7 @@
     </template>
 
     <q-list v-else bordered separator>
-      <q-item v-for="p in puzzles" :key="p.id" clickable :to="`/integrame/${p.id}`">
+      <q-item v-for="p in filteredPuzzles" :key="p.id" clickable :to="`/integrame/${p.id}`">
         <q-item-section>
           <q-item-label>{{ p.title }}</q-item-label>
           <q-item-label caption>
@@ -28,7 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { isAxiosError } from 'axios'
 import { api } from 'boot/axios'
 
@@ -37,6 +38,11 @@ type WithCodeName = { id?: number; code?: string | null; name?: string | null }
 type LangField = WithCodeName | string | number | null
 type DiffField = WithCodeName | string | number | null
 
+interface Category {
+  id: number
+  code: string
+  name: string
+}
 interface PuzzleListItem {
   id: number
   title: string
@@ -46,9 +52,16 @@ interface PuzzleListItem {
   rows: number
   cols: number
   created_at?: string
+  categories?: Category[]
 }
 
 const puzzles = ref<PuzzleListItem[]>([])
+const route = useRoute()
+const selectedCategory = computed(() => route.query.cat as string | undefined)
+const filteredPuzzles = computed(() => {
+  if (!selectedCategory.value) return puzzles.value
+  return puzzles.value.filter(p => p.categories?.some(c => c.code === selectedCategory.value))
+})
 const loading = ref(true)
 const error = ref<string | null>(null)
 

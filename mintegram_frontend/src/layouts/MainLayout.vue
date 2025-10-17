@@ -1,4 +1,5 @@
 <template>
+
   <q-layout view="lHh Lpr lFf">
     <!-- DRAWER -->
     <q-drawer v-model="drawer" show-if-above bordered>
@@ -7,6 +8,22 @@
           <q-item clickable v-ripple to="/" exact>
             <q-item-section avatar><q-icon name="home" /></q-item-section>
             <q-item-section>Acasă</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/stats" exact>
+            <q-item-section avatar><q-icon name="insights" /></q-item-section>
+            <q-item-section>Stats</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/shop">
+            <q-item-section avatar><q-icon name="shopping_cart" /></q-item-section>
+            <q-item-section>Shop</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/leaderboard">
+            <q-item-section avatar><q-icon name="emoji_events" /></q-item-section>
+            <q-item-section>Clasament Global</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/challenges">
+            <q-item-section avatar><q-icon name="military_tech" /></q-item-section>
+            <q-item-section>Provocări & Clasament Provocări</q-item-section>
           </q-item>
           <q-item clickable v-ripple to="/profile">
             <q-item-section avatar><q-icon name="person" /></q-item-section>
@@ -20,6 +37,14 @@
             <q-item-section avatar><q-icon name="map" /></q-item-section>
             <q-item-section>Hartă niveluri</q-item-section>
           </q-item>
+            <q-item clickable v-ripple to="/categorii">
+            <q-item-section avatar><q-icon name="category" /></q-item-section>
+            <q-item-section>Categorii Integrame</q-item-section>
+          </q-item>
+            <q-item clickable v-ripple to="/stats">
+              <q-item-section avatar><q-icon name="insights" /></q-item-section>
+              <q-item-section>Statistici</q-item-section>
+            </q-item>
           <q-item clickable v-ripple to="/settings">
             <q-item-section avatar><q-icon name="settings" /></q-item-section>
             <q-item-section>Setări</q-item-section>
@@ -33,6 +58,7 @@
             <q-item-section avatar><q-icon name="subscriptions" /></q-item-section>
             <q-item-section>Abonamente</q-item-section>
           </q-item>
+
         </template>
         <template v-else>
           <q-item clickable v-ripple to="/login">
@@ -42,6 +68,10 @@
           <q-item clickable v-ripple to="/signup">
             <q-item-section avatar><q-icon name="person_add" /></q-item-section>
             <q-item-section>Sign Up</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/dog">
+            <q-item-section avatar><q-icon name="person_add" /></q-item-section>
+            <q-item-section>Dog</q-item-section>
           </q-item>
         </template>
       </q-list>
@@ -66,6 +96,10 @@
             XP {{ game.xp }} / {{ game.level * 100 }}
           </q-chip>
 
+          <q-btn flat round dense class="q-mr-sm">
+            <q-badge color="amber" floating>{{ auth.user?.coins ?? 0 }}</q-badge>
+            <div style="font-size:18px;line-height:1">🪙</div>
+          </q-btn>
           <q-btn flat round dense>
             <q-badge color="teal" floating>{{ game.diamonds }}</q-badge>
             <div style="font-size:18px;line-height:1">💎</div>
@@ -189,6 +223,7 @@ const game = useGame()
 const auth = useAuth()
 const router = useRouter()
 const drawer = ref(false)
+console.log(drawer)
 
 // Dialog logic
 const showDialog = ref(false)
@@ -247,7 +282,8 @@ function logout() {
 
 let timer: number | undefined
 onMounted(async () => {
-  game.init()
+  drawer.value = false
+  await game.init()
   timer = window.setInterval(() => game.tick(), 250)
   // Verificare automată token la inițializare
   if (auth.access) {

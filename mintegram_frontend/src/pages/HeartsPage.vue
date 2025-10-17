@@ -44,6 +44,7 @@
               rounded
             />
             <q-btn label="+25 XP" outline color="amber-8" @click="game.addXpAndSync(25)" />
+            <q-btn label="+10 monede" outline color="amber" @click="addCoins" />
           </div>
 
           <div v-if="!game.canUseHeart()" class="text-negative q-mt-md">
@@ -72,6 +73,35 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from 'stores/auth'
+import { api } from 'src/boot/axios'
+const auth = useAuth()
+async function addCoins() {
+  if (auth.user) {
+    try {
+      const reward = 10 // Poți personaliza valoarea aici sau dintr-o variabilă/config
+      const newCoins = (auth.user.coins ?? 0) + reward
+      const { data } = await api.post('auth/update-progress/', {
+        coins: newCoins
+      })
+      if (typeof data.coins === 'number') {
+        auth.user.coins = data.coins
+        $q.notify({
+          type: 'positive',
+          message: `Ai primit ${reward} monede! 🪙`,
+          caption: `Total: ${data.coins} monede`,
+          color: 'amber',
+          position: 'top',
+          timeout: 2500
+        })
+      } else {
+        $q.notify({ type: 'warning', message: 'Eroare la sincronizare monede.' })
+      }
+    } catch {
+      $q.notify({ type: 'negative', message: 'Eroare la conexiunea cu serverul.' })
+    }
+  }
+}
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 // Setează URL absolut pentru imaginea badge-ului dacă e relativă
 function badgeImgUrl(icon: string|null): string|undefined {
@@ -82,7 +112,7 @@ function badgeImgUrl(icon: string|null): string|undefined {
   if (!icon.startsWith('/media/')) {
     path = '/media/' + icon.replace(/^\/*/, '')
   }
-  return `http://localhost:8000${path}`
+  return `http://localhost:8001${path}`
 }
 // Stiluri pentru pop-up colorat
 // Poți muta în <style scoped> dacă vrei

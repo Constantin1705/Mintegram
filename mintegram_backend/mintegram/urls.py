@@ -15,11 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from accounts.views import RegisterView, LoginView, MeView, UpdateProgressView
 from accounts.views_badge_list import BadgeListView
 from rest_framework.routers import DefaultRouter
-from crosswords.views import PuzzleViewSet
+from crosswords.views import PuzzleViewSet, ScoreViewSet, ChallengeViewSet, ChallengeUserViewSet, CategoryViewSet
+from crosswords.views import PuzzleStatViewSet, ThemeSettingView
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -33,10 +34,17 @@ urlpatterns = [
     path("auth/update-progress/", UpdateProgressView.as_view(), name="update-progress"),
     path('api/', include('subscriptions.urls')),
     path('api/badges/', BadgeListView.as_view(), name='badge-list'),
+    path('api/', include('accounts.urls')),
 ]
+
 router = DefaultRouter()
 router.register(r"puzzles", PuzzleViewSet, basename="puzzle")
-urlpatterns += [ path("api/", include(router.urls)), ]
+router.register(r"leaderboard", ScoreViewSet, basename="leaderboard")
+router.register(r"challenges", ChallengeViewSet, basename="challenges")
+router.register(r"challenge-user", ChallengeUserViewSet, basename="challenge-user")
+router.register(r"categories", CategoryViewSet, basename="category")
+router.register(r'puzzlestats', PuzzleStatViewSet, basename="puzzlestats")
+urlpatterns += [ path("api/", include(router.urls)), path("api/theme-setting/", ThemeSettingView.as_view()), ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

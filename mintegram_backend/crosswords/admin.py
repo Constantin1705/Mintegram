@@ -1,10 +1,49 @@
-# admin.py
+# Înregistrare model AppSetting pentru tema globală
+from .models import AppSetting
+
+from .models import PuzzleStat
+
+from .models import Category
 from django.contrib import admin
-from django.db.models import Count
-from import_export.admin import ImportExportModelAdmin
+from .models import Score, Challenge, Puzzle, Cell, Clue, Language, Difficulty
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
-from .models import Puzzle, Cell, Clue, Language, Difficulty
+from import_export.admin import ImportExportModelAdmin
+from django.db.models import Count
+
+admin.site.register(AppSetting)
+@admin.register(PuzzleStat)
+class PuzzleStatAdmin(admin.ModelAdmin):
+    list_display = ("user", "puzzle", "time_spent", "mistakes", "wrong_letters", "completed", "completed_at")
+    search_fields = ("user__username", "puzzle__title", "wrong_letters")
+    list_filter = ("completed", "puzzle")
+
+@admin.register(Score)
+class ScoreAdmin(admin.ModelAdmin):
+    list_display = ("user", "points", "date")
+    search_fields = ("user__username",)
+    list_filter = ("date",)
+
+@admin.register(Challenge)
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = (
+        "title", "recurrence", "points", "reward_coins", "reward_xp", "reward_badge", "reward_item",
+        "progress_max", "deadline", "difficulty", "active", "start_date", "end_date"
+    )
+    list_filter = ("recurrence", "active", "difficulty", "deadline")
+    search_fields = ("title", "description", "reward_badge", "reward_item")
+    filter_horizontal = ("collaborators",)
+    fieldsets = (
+        (None, {
+            "fields": ("title", "description", "points", "recurrence", "active", "start_date", "end_date")
+        }),
+        ("Rewards", {
+            "fields": ("reward_coins", "reward_xp", "reward_badge", "reward_item")
+        }),
+        ("Progress & Difficulty", {
+            "fields": ("progress_max", "deadline", "difficulty", "collaborators")
+        }),
+    )
 
 
 # =========================
@@ -242,3 +281,9 @@ class ClueAdmin(ImportExportModelAdmin):
     @admin.display(description="Direction")
     def get_direction_display(self, obj):
         return obj.get_direction_display()
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "code")
+    search_fields = ("name", "code")
+    ordering = ("name",)

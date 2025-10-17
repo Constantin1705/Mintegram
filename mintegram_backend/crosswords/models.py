@@ -1,4 +1,106 @@
+
 from django.db import models, transaction
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class AppSetting(models.Model):
+    THEME_CHOICES = [
+        ("light", "Light"),
+        ("dark", "Dark"),
+    ]
+    theme = models.CharField(max_length=10, choices=THEME_CHOICES, default="light")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Theme: {self.theme}"
+class PuzzleStat(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    puzzle = models.ForeignKey('Puzzle', on_delete=models.CASCADE)
+    time_spent = models.IntegerField(default=0)  # secunde
+    mistakes = models.IntegerField(default=0)
+    wrong_letters = models.CharField(max_length=128, blank=True)  # ex: "A,E,R"
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.puzzle.title} ({'done' if self.completed else 'active'})"
+
+class Category(models.Model):
+    code = models.CharField(max_length=100, unique=True)  # ex: 'capitale', 'animale', 'istorie', 'stiinta'
+    name = models.CharField(max_length=200)  # ex: 'Capitale', 'Animale', 'Istorie', 'Știință'
+
+    def __str__(self):
+        return self.name
+
+class Score(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    points = models.IntegerField(default=0)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.points} puncte"
+
+class Challenge(models.Model):
+    RECURRENCE_CHOICES = [
+        ("once", "O dată"),
+        ("daily", "Zilnic"),
+        ("weekly", "Săptămânal"),
+        ("monthly", "Lunar"),
+    ]
+    title = models.CharField(max_length=128)
+    description = models.TextField(blank=True)
+    points = models.IntegerField(default=10)
+    reward_coins = models.IntegerField(default=0)
+    reward_xp = models.IntegerField(default=0)
+    reward_badge = models.CharField(max_length=64, blank=True)
+    reward_item = models.CharField(max_length=64, blank=True)
+    progress_max = models.IntegerField(default=1)
+    deadline = models.DateTimeField(null=True, blank=True)
+    difficulty = models.CharField(max_length=32, default="normal")
+    collaborators = models.ManyToManyField(User, blank=True, related_name='collaborative_challenges')
+    recurrence = models.CharField(max_length=16, choices=RECURRENCE_CHOICES, default="once")
+    active = models.BooleanField(default=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+class FriendChallenge(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "În așteptare"),
+        ("accepted", "Acceptată"),
+        ("declined", "Refuzată"),
+        ("completed", "Finalizată"),
+    ]
+    RECURRENCE_CHOICES = [
+        ("once", "O dată"),
+        ("daily", "Zilnic"),
+        ("weekly", "Săptămânal"),
+        ("monthly", "Lunar"),
+    ]
+
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_friend_challenges')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_friend_challenges')
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="pending")
+    sent_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.receiver.username}: {self.challenge.title} ({self.get_status_display()})"
+
+    def __str__(self):
+        return f"{self.title} ({self.get_recurrence_display()})"
+class ChallengeUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    accepted = models.BooleanField(default=False)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    points_awarded = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ("user", "challenge")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.challenge.title} ({'done' if self.completed else 'active'})"
 
 
 class Language(models.Model):
@@ -27,6 +129,7 @@ class Puzzle(models.Model):
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, blank=True)
     level = models.PositiveIntegerField(default=1)  # numeric level (1, 2, 3…)
     difficulty = models.ForeignKey(Difficulty, on_delete=models.SET_NULL, null=True, blank=True)
+    categories = models.ManyToManyField('Category', blank=True, related_name='puzzles')
 
     rows = models.PositiveIntegerField(default=10)
     cols = models.PositiveIntegerField(default=10)

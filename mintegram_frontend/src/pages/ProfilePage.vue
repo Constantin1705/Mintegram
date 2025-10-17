@@ -158,6 +158,6 @@ function badgeImgUrl(icon: string|null): string|undefined {
   if (!icon.startsWith('/media/')) {
     path = '/media/' + icon.replace(/^\/*/, '')
   }
-  return `http://localhost:8000${path}`
+  return `http://localhost:8001${path}`
 }
 </script>

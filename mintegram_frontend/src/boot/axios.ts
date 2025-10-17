@@ -10,7 +10,7 @@ declare module 'vue' {
 }
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/', // <— DRF
+  baseURL: 'http://localhost:8001/', // <— DRF
   // withCredentials: false,  // rămâne false pentru JWT în header
 });
 

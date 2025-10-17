@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
-from .models import Badge
+from .models import Badge, Product
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ["id", "type", "name", "price", "description", "image"]
 
 User = get_user_model()
 

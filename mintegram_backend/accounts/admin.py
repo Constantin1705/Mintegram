@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import User, Badge
+from .models import User, Badge, Product
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+	list_display = ("name", "type", "price")
+	search_fields = ("name", "type")
+	list_filter = ("type",)
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):

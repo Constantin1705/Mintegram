@@ -6,6 +6,7 @@ class User(AbstractUser):
     xp = models.IntegerField(default=0)
     level = models.IntegerField(default=1)
     diamonds = models.IntegerField(default=0)
+    coins = models.IntegerField(default=0)  # Monede pentru shop
 
     def __str__(self):
         return self.username or self.email
@@ -28,7 +29,25 @@ class User(AbstractUser):
                 self.badges.add(badge)
 
 
+class Product(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ("hint", "Indiciu"),
+        ("theme", "Temă"),
+        ("skin", "Skin"),
+        ("grid", "Model de grilă"),
+    ]
+
+    type = models.CharField(max_length=16, choices=PRODUCT_TYPE_CHOICES)
+    name = models.CharField(max_length=100)
+    price = models.IntegerField()
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="shop/", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.get_type_display()}: {self.name} ({self.price} monede)"
+
 class Badge(models.Model):
+
     CONDITION_TYPE_CHOICES = [
         ("login_days", "Zile de logare"),
         ("integrame_rezolvate", "Integrame rezolvate"),
@@ -45,3 +64,21 @@ class Badge(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Product(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ("hint", "Indiciu"),
+        ("theme", "Temă"),
+        ("skin", "Skin"),
+        ("grid", "Model de grilă"),
+    ]
+
+    type = models.CharField(max_length=16, choices=PRODUCT_TYPE_CHOICES)
+    name = models.CharField(max_length=100)
+    price = models.IntegerField()
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to="shop/", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.get_type_display()}: {self.name} ({self.price} monede)"
