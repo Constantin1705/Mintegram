@@ -1,0 +1,37 @@
+/*# sourceMappingURL=app.css.map */
+/* Seasonal themes */
+.theme-christmas {
+	--season-bg: linear-gradient(180deg, #062f2a 0%, #08373a 100%);
+	background: var(--season-bg) !important;
+	color: #fff !important;
+}
+.theme-christmas .q-btn.primary { background-color: #d32f2f !important; border-color: #b71c1c !important; }
+.theme-christmas .q-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+
+.theme-easter {
+	--season-bg: linear-gradient(180deg, #fff7e6 0%, #fff3f8 100%);
+	background: var(--season-bg) !important;
+	color: #3a2b2b !important;
+}
+.theme-easter .q-btn.primary { background-color: #8e44ad !important; }
+.theme-easter .q-card { background: rgba(255,255,255,0.9); }
+
+/* Seasonal overlays global visuals */
+.season-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+.season-overlay .particles { position: absolute; inset: 0; overflow: hidden; }
+.season-overlay .particle { position: absolute; top: -10%; border-radius: 50%; opacity: .95; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes fall { 0% { transform: translateY(-10vh) } 100% { transform: translateY(120vh) } }
+
+/* Christmas specifics */
+.christmas-overlay { background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); }
+.christmas-overlay .particle { box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+.christmas-overlay .garland { position: absolute; left: 0; right: 0; top: 6px; height: 36px; display:flex; justify-content:space-between; align-items:center; padding: 0 16px; }
+.christmas-overlay .garland-light { width:10px; height:10px; border-radius:8px; background: #ffd; box-shadow: 0 0 8px rgba(255,200,0,0.8); transform-origin:center; animation: blink 2s infinite; }
+@keyframes blink { 0% { opacity: .2 } 50% { opacity: 1 } 100% { opacity: .2 } }
+
+/* Easter specifics */
+.easter-overlay { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)); }
+.easter-overlay .particles .particle { border-radius: 4px; }
+.easter-overlay .floating-eggs { position:absolute; inset:0; }
+.easter-overlay .egg { position:absolute; width:48px; height:62px; border-radius:50% 50% 45% 45%; box-shadow: 0 6px 18px rgba(0,0,0,0.12); animation: floaty 6s ease-in-out infinite; }
+@keyframes floaty { 0% { transform: translateY(0) } 50% { transform: translateY(-18px) } 100% { transform: translateY(0) } }

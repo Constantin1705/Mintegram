@@ -2,9 +2,28 @@
   <div class="q-pa-md flex flex-center">
     <q-card class="profile-card q-pa-lg" flat bordered>
       <div class="row items-center q-mb-md">
-        <q-avatar size="80px" color="primary" text-color="white">
-          <q-icon name="person" size="48px" />
-        </q-avatar>
+        <div class="profile-avatar-wrapper">
+          <q-avatar size="80px" color="primary" text-color="white">
+            <img v-if="user?.profile_picture" :src="getProfilePictureUrl(user.profile_picture)" alt="Profile" />
+            <q-icon v-else name="person" size="48px" />
+          </q-avatar>
+          <q-btn
+            round
+            dense
+            size="sm"
+            color="primary"
+            icon="photo_camera"
+            class="avatar-edit-btn"
+            @click="triggerFileInput"
+          />
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="onFileSelected"
+          />
+        </div>
         <div class="q-ml-lg">
           <div class="text-h5 text-weight-bold">{{ user?.username }}</div>
           <div class="text-subtitle2 text-grey-7">{{ user?.email }}</div>
@@ -53,6 +72,19 @@
 .profile-card {
   max-width: 420px;
   width: 100%;
+}
+.profile-avatar-wrapper {
+  position: relative;
+}
+.profile-avatar-wrapper .q-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
 }
 .badges-grid {
   display: grid;
@@ -109,9 +141,12 @@
 </style>
 
 <script lang="ts" setup>
+// Profile page with avatar upload functionality
 import { onMounted, ref } from "vue"
 import { api } from "src/boot/axios"
 import { useGame } from 'stores/game'
+import { useAuth } from 'stores/auth'
+import { useQuasar, Loading } from 'quasar'
 import { fetchAllBadges } from 'src/utils/badges'
 
 interface Badge {
@@ -125,13 +160,17 @@ interface UserProfile {
   id: number
   username: string
   email: string
+  profile_picture: string | null
   badges: Badge[]
 }
 
 const user = ref<UserProfile | null>(null)
 const loading = ref(true)
 const game = useGame()
+const auth = useAuth()
+const $q = useQuasar()
 const allBadges = ref<Badge[]>([])
+const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(async () => {
   try {
@@ -151,6 +190,7 @@ onMounted(async () => {
 function userHasBadge(badgeId: number): boolean {
   return !!user.value?.badges?.some(b => b.id === badgeId)
 }
+
 function badgeImgUrl(icon: string|null): string|undefined {
   if (!icon) return undefined
   if (icon.startsWith('http://') || icon.startsWith('https://')) return icon
@@ -159,5 +199,80 @@ function badgeImgUrl(icon: string|null): string|undefined {
     path = '/media/' + icon.replace(/^\/*/, '')
   }
   return `http://localhost:8001${path}`
+}
+
+function getProfilePictureUrl(profilePicture: string): string {
+  if (profilePicture.startsWith('http://') || profilePicture.startsWith('https://')) {
+    return profilePicture
+  }
+  let path = profilePicture
+  if (!profilePicture.startsWith('/media/')) {
+    path = '/media/' + profilePicture.replace(/^\/*/, '')
+  }
+  return `http://localhost:8001${path}`
+}
+
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+async function onFileSelected(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // Validare tip fișier
+  if (!file.type.startsWith('image/')) {
+    $q.notify({
+      type: 'negative',
+      message: 'Te rog selectează o imagine validă'
+    })
+    return
+  }
+
+  // Validare dimensiune (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    $q.notify({
+      type: 'negative',
+      message: 'Imaginea este prea mare (max 5MB)'
+    })
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('profile_picture', file)
+
+  try {
+    Loading.show({ message: 'Se încarcă imaginea...' })
+
+    await api.patch('/api/auth/me/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    // Reîncarcă datele utilizatorului
+    await auth.fetchMe()
+    const userRes = await api.get<UserProfile>("/api/auth/me/")
+    user.value = userRes.data
+
+    $q.notify({
+      type: 'positive',
+      message: 'Poza de profil a fost actualizată!'
+    })
+  } catch (error) {
+    console.error('Error uploading profile picture:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Eroare la încărcarea imaginii'
+    })
+  } finally {
+    Loading.hide()
+    // Resetează input-ul
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+  }
 }
 </script>

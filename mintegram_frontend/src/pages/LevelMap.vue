@@ -1,5 +1,5 @@
 <template>
-  <q-page class="skillmap-page q-pa-md q-pb-xl">
+  <q-page :class="[ 'skillmap-page q-pa-md q-pb-xl', pageClass ]">
     <div class="header row items-center justify-between q-mb-md">
       <div class="row items-center q-gutter-sm">
         <q-badge color="purple" text-color="white">Unități</q-badge>
@@ -9,7 +9,26 @@
         <q-icon name="local_fire_department"/>
         <span>{{ streak }} zile la rând</span>
       </div>
+      <div class="row items-center q-gutter-sm">
+        <q-btn dense round flat size="sm" title="Temă iarnă" @click="setTheme('winter')">
+          <q-icon name="ac_unit"/>
+        </q-btn>
+        <q-btn dense round flat size="sm" title="Temă Paște" @click="setTheme('easter')">
+          <q-icon name="emoji_events"/>
+        </q-btn>
+        <q-btn dense round flat size="sm" title="Temă implicită" @click="setTheme('')">
+          <q-icon name="palette"/>
+        </q-btn>
+      </div>
     </div>
+
+    <!-- theme overlays -->
+    <div v-if="theme === 'winter'" class="winter-overlay" aria-hidden="true">
+      <div class="snow-confetti" aria-hidden="true">
+        <span v-for="p in particles" :key="p.id" class="particle" :style="p.style"></span>
+      </div>
+    </div>
+    <div v-else-if="theme === 'easter'" class="easter-overlay" aria-hidden="true"></div>
 
     <!-- MAP CONTAINER -->
     <div ref="mapEl" class="map-container">
@@ -79,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 /** TYPES **/
 interface Step {
@@ -133,6 +152,50 @@ const svgHeight = computed(() => (topPadding + (steps.value.length - 1) * stepGa
 
 const currentStep = computed(() => positionedSteps.value.find(s => s.state === 'current'))
 
+// THEME state
+const theme = ref<string>('')
+function setTheme(t: string) {
+  theme.value = t
+}
+
+const pageClass = computed(() => {
+  return theme.value === 'winter' ? 'theme-winter' : theme.value === 'easter' ? 'theme-easter' : ''
+})
+
+// snow/confetti particles for winter theme
+const particles = ref<Array<{ id: string; style: Record<string, string> }>>([])
+function makeParticles(count = 30) {
+  const arr: Array<{ id: string; style: Record<string, string> }> = []
+  for (let i = 0; i < count; i++) {
+    const left = Math.random() * 100
+    const size = 6 + Math.random() * 18
+    const fall = 6 + Math.random() * 10
+    const delay = Math.random() * 3
+    const rotate = Math.random() * 360
+    // mix of white snow and light pastel confetti
+    const isSnow = Math.random() > 0.4
+    const color = isSnow ? 'rgba(255,255,255,0.9)' : `hsl(${Math.floor(200 + Math.random()*140)},70%,85%)`
+    const style: Record<string, string> = {
+      left: `${left}%`,
+      width: `${size}px`,
+      height: `${size}px`,
+      background: color,
+      animationDuration: `${fall}s`,
+      animationDelay: `${delay}s`,
+      transform: `rotate(${rotate}deg)`
+    }
+    arr.push({ id: `p_${Date.now()}_${i}_${Math.random().toString(36).slice(2,5)}`, style })
+  }
+  particles.value = arr
+}
+
+function clearParticles() { particles.value = [] }
+
+watch(theme, (t) => {
+  if (t === 'winter') makeParticles(36)
+  else clearParticles()
+})
+
 /** UNIT RIBBONS POSITION **/
 const unitRibbons = computed(() => {
   const groups: Record<string, { id: string; title: string; y: number; color: string }> = {}
@@ -179,6 +242,8 @@ function onNodeClick(s: PositionedStep) {
 onMounted(() => {
   if (currentStep.value) scrollToY(currentStep.value.y)
 })
+
+// (theme is reactive and used via template bindings)
 </script>
 
 <style scoped>
@@ -290,4 +355,32 @@ onMounted(() => {
 /* Transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity .3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* Theme styles */
+.theme-winter { background: linear-gradient(180deg, #F7FBFF 0%, #EEF7FF 100%); }
+.winter-overlay { pointer-events: none; position: fixed; inset: 0; background-image: url('/assets/snow.png'); background-repeat: repeat; opacity: .9; mix-blend-mode: screen; z-index: 2 }
+
+.theme-easter { background: linear-gradient(180deg, #FFF7F3 0%, #FFF5EE 100%); }
+.easter-overlay { pointer-events: none; position: fixed; inset: 0; background-image: radial-gradient(circle at 10% 10%, rgba(255,235,238,.2), transparent 2%), radial-gradient(circle at 70% 40%, rgba(232,245,233,.2), transparent 2%); opacity: .95; z-index: 2 }
+
+/* snow/confetti particles */
+.winter-overlay { pointer-events: none; position: fixed; inset: 0; z-index: 40; }
+.winter-overlay .snow-confetti { position: absolute; inset: 0; overflow: hidden; }
+.winter-overlay .particle {
+  position: absolute; top: -10%; border-radius: 50%; opacity: .95; will-change: transform, top;
+  animation-name: fall, sway, spin;
+  animation-timing-function: linear, ease-in-out, linear;
+  animation-iteration-count: infinite, infinite, infinite;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-10vh) rotate(0deg); }
+  100% { transform: translateY(120vh) rotate(360deg); }
+}
+@keyframes sway {
+  0% { transform: translateX(0px); }
+  50% { transform: translateX(20px); }
+  100% { transform: translateX(0px); }
+}
+@keyframes spin { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
 </style>

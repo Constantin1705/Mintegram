@@ -23,7 +23,20 @@
           <div class="text-h5 text-weight-bold text-amber-8 shop-price">
             {{ product.price }} <span class="shop-coin">🪙</span>
           </div>
-          <q-btn color="primary" glossy size="lg" icon="shopping_bag" label="Cumpără" @click="buyProduct(product.id)" class="shop-buy-btn" />
+          <q-btn
+            color="primary"
+            glossy
+            size="lg"
+            icon="shopping_bag"
+            :label="canAfford(product) ? 'Cumpără' : 'Insuficient'"
+            @click="buyProduct(product.id)"
+            :disable="!canAfford(product)"
+            class="shop-buy-btn"
+          >
+            <q-tooltip v-if="!canAfford(product)" anchor="top middle" self="bottom middle">
+              {{ getInsufficientFundsMessage(product) }}
+            </q-tooltip>
+          </q-btn>
         </q-card-section>
       </q-card>
     </div>
@@ -36,8 +49,11 @@
 
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { api } from 'src/boot/axios';
+import { useAuth } from 'stores/auth';
+// import { useGame } from 'stores/game';
+import { useQuasar } from 'quasar';
 
 type Product = {
   id: number;
@@ -51,6 +67,10 @@ type Product = {
 
 const products = ref<Product[]>([]);
 const message = ref('');
+const auth = useAuth();
+const $q = useQuasar();
+
+const userCoins = computed(() => auth.user?.coins ?? 0);
 
 async function fetchProducts() {
   try {
@@ -61,11 +81,43 @@ async function fetchProducts() {
   }
 }
 
+function canAfford(product: Product): boolean {
+  // Verifică dacă produsul folosește diamante (poți adăuga un câmp diamond_price în viitor)
+  // Deocamdată presupunem că toate produsele folosesc coins
+  return userCoins.value >= product.price;
+}
+
+function getInsufficientFundsMessage(product: Product): string {
+  const needed = product.price - userCoins.value;
+  return `Nu ai suficiente monede! Îți lipsesc ${needed} 🪙`;
+}
+
 async function buyProduct(productId: number) {
+  const product = products.value.find(p => p.id === productId);
+  if (!product) return;
+
+  // Verifică dacă utilizatorul are suficiente resurse
+  if (!canAfford(product)) {
+    $q.notify({
+      type: 'negative',
+      message: getInsufficientFundsMessage(product),
+      position: 'top',
+      timeout: 3000
+    });
+    return;
+  }
+
   try {
   const res = await api.post('/api/shop/buy/', { product_id: productId });
     message.value = res.data.detail;
-    // Poți actualiza monedele utilizatorului aici
+    $q.notify({
+      type: 'positive',
+      message: 'Produs cumpărat cu succes!',
+      position: 'top',
+      timeout: 2000
+    });
+    // Actualizează monedele utilizatorului
+    await auth.fetchMe();
   } catch (e: unknown) {
     if (
       typeof e === 'object' &&
@@ -74,8 +126,20 @@ async function buyProduct(productId: number) {
       typeof (e as { response?: { data?: { detail?: string } } }).response?.data?.detail === 'string'
     ) {
       message.value = (e as { response: { data: { detail: string } } }).response.data.detail;
+      $q.notify({
+        type: 'negative',
+        message: message.value,
+        position: 'top',
+        timeout: 3000
+      });
     } else {
       message.value = 'Eroare la cumpărare.';
+      $q.notify({
+        type: 'negative',
+        message: message.value,
+        position: 'top',
+        timeout: 3000
+      });
     }
   }
 }

@@ -1,6 +1,26 @@
 <template>
 
-  <q-layout view="lHh Lpr lFf">
+  <q-layout
+    view="lHh Lpr lFf"
+    :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-grey-1 text-dark'"
+  >
+    <!-- Seasonal overlays (global) -->
+    <div v-if="seasonalTheme === 'christmas'" class="season-overlay christmas-overlay" aria-hidden="true">
+      <div class="particles">
+        <span v-for="p in particles" :key="p.id" class="particle" :style="p.style"></span>
+      </div>
+      <div class="garland" aria-hidden="true">
+        <span v-for="n in 20" :key="n" class="garland-light"></span>
+      </div>
+    </div>
+    <div v-else-if="seasonalTheme === 'easter'" class="season-overlay easter-overlay" aria-hidden="true">
+      <div class="particles">
+        <span v-for="p in particles" :key="p.id" class="particle" :style="p.style"></span>
+      </div>
+      <div class="floating-eggs" aria-hidden="true">
+        <span v-for="e in eggs" :key="e.id" class="egg" :style="e.style"></span>
+      </div>
+    </div>
     <!-- DRAWER -->
     <q-drawer v-model="drawer" show-if-above bordered>
       <q-list>
@@ -37,9 +57,13 @@
             <q-item-section avatar><q-icon name="map" /></q-item-section>
             <q-item-section>Hartă niveluri</q-item-section>
           </q-item>
-            <q-item clickable v-ripple to="/categorii">
+          <q-item clickable v-ripple to="/categorii">
             <q-item-section avatar><q-icon name="category" /></q-item-section>
             <q-item-section>Categorii Integrame</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple to="/integrame">
+            <q-item-section avatar><q-icon name="grid_on" /></q-item-section>
+            <q-item-section>Integrame</q-item-section>
           </q-item>
             <q-item clickable v-ripple to="/stats">
               <q-item-section avatar><q-icon name="insights" /></q-item-section>
@@ -200,6 +224,21 @@
           {{ mmss(game.remainingSec) }}
         </div>
 
+        <q-space />
+        <!-- Dark mode toggle -->
+        <q-btn
+          flat
+          dense
+          round
+          :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+          @click="toggleDark"
+          :aria-label="$q.dark.isActive ? 'Comută pe mod deschis' : 'Comută pe mod întunecat'"
+        >
+          <q-tooltip anchor="bottom middle" self="top middle">
+            {{ $q.dark.isActive ? 'Luminos' : 'Întunecat' }}
+          </q-tooltip>
+        </q-btn>
+
       </q-toolbar>
     </q-header>
 
@@ -212,6 +251,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useQuasar } from 'quasar'
 import { useGame } from 'stores/game'
 import { mmss } from 'src/utils/time'
 import { useAuth } from 'stores/auth'
@@ -220,10 +260,94 @@ import { api } from 'src/boot/axios'
 
 
 const game = useGame()
+const $q = useQuasar()
 const auth = useAuth()
 const router = useRouter()
 const drawer = ref(false)
-console.log(drawer)
+
+// Seasonal visuals (global overlay)
+const seasonalTheme = ref<string>('')
+const particles = ref<Array<{ id: string; style: Record<string,string> }>>([])
+const eggs = ref<Array<{ id: string; style: Record<string,string> }>>([])
+
+function makeParticles(count = 36, kind: 'christmas'|'easter' = 'christmas') {
+  const arr: Array<{ id: string; style: Record<string,string> }> = []
+  for (let i = 0; i < count; i++) {
+    const left = Math.random() * 100
+    const size = kind === 'christmas' ? 6 + Math.random()*16 : 8 + Math.random()*18
+    const fall = 6 + Math.random()*8
+    const delay = Math.random()*3
+    const color = kind === 'christmas' ? (Math.random()>0.6 ? 'rgba(255,255,255,0.95)' : `hsl(${Math.floor(0+Math.random()*60)},70%,60%)`) : `hsl(${Math.floor(260 + Math.random()*100)},70%,85%)`
+    arr.push({ id: `p_${Date.now()}_${i}_${Math.random().toString(36).slice(2,5)}`, style: { left: `${left}%`, width: `${size}px`, height: `${size}px`, background: color, animationDuration: `${fall}s`, animationDelay: `${delay}s` } })
+  }
+  particles.value = arr
+}
+
+function makeEggs(count = 8) {
+  const arr: Array<{ id: string; style: Record<string,string> }> = []
+  for (let i=0;i<count;i++) {
+    const left = Math.random()*100
+    const top = 20 + Math.random()*60
+    const scale = 0.9 + Math.random()*0.8
+    const hue = 250 + Math.random()*140
+    arr.push({ id: `egg_${Date.now()}_${i}`, style: { left: `${left}%`, top: `${top}%`, transform: `scale(${scale})`, background: `linear-gradient(135deg,hsl(${hue},70%,85%), hsl(${hue+20},70%,75%))` } })
+  }
+  eggs.value = arr
+}
+
+function clearSeasonal() { particles.value = []; eggs.value = [] }
+
+// listen to storage so changes in settings propagate across tabs/components
+function normalizeThemeValue(raw: unknown) {
+  if (raw == null) return ''
+  if (typeof raw === 'string') {
+    const s = raw.trim()
+    if (!s) return ''
+    if (s === '[object Object]') return ''
+    if (s.startsWith('{') || s.startsWith('[')) return ''
+    return s
+  }
+  return ''
+}
+
+function applyThemeValue(saved: string) {
+  seasonalTheme.value = saved
+  console.debug('[MainLayout] applyThemeValue ->', saved)
+  // update body classes
+  if (document && document.body) {
+    document.body.classList.remove('theme-christmas', 'theme-easter')
+    if (saved === 'christmas') document.body.classList.add('theme-christmas')
+    else if (saved === 'easter') document.body.classList.add('theme-easter')
+  }
+  // update visuals
+  if (saved === 'christmas') { makeParticles(48,'christmas'); eggs.value = [] }
+  else if (saved === 'easter') { makeParticles(40,'easter'); makeEggs(10) }
+  else clearSeasonal()
+}
+
+function onStorage(e: StorageEvent) {
+  if (e.key === 'mintegram_seasonal_theme') {
+    const raw = e.newValue
+    console.debug('[MainLayout] storage event ->', { key: e.key, newValue: e.newValue })
+    const saved = normalizeThemeValue(raw)
+    if (!saved) {
+      // cleanup any invalid stored value
+      try { localStorage.removeItem('mintegram_seasonal_theme') } catch { console.debug('Could not remove invalid seasonal theme') }
+      applyThemeValue('')
+      return
+    }
+    applyThemeValue(saved)
+  }
+}
+window.addEventListener('storage', onStorage)
+function onSeasonalChange(e: Event) {
+  const raw = (e as CustomEvent).detail
+  console.debug('[MainLayout] mintegram-seasonal-change event ->', raw)
+  const t = normalizeThemeValue(raw)
+  applyThemeValue(t)
+}
+window.addEventListener('mintegram-seasonal-change', onSeasonalChange as EventListener)
+
 
 // Dialog logic
 const showDialog = ref(false)
@@ -280,6 +404,13 @@ function logout() {
   void router.push('/login')
 }
 
+function toggleDark() {
+  $q.dark.toggle()
+  try {
+    localStorage.setItem('theme', $q.dark.isActive ? 'dark' : 'light')
+  } catch {/* ignore */}
+}
+
 let timer: number | undefined
 onMounted(async () => {
   drawer.value = false
@@ -293,8 +424,15 @@ onMounted(async () => {
       // opțional: router.push('/login') dacă vrei redirect instant
     }
   }
+  // init seasonal theme from localStorage
+  try {
+    const raw = localStorage.getItem('mintegram_seasonal_theme') || ''
+    const saved = normalizeThemeValue(raw)
+    console.debug('[MainLayout] init seasonal theme from storage ->', { raw, saved })
+    if (saved) applyThemeValue(saved)
+  } catch { console.debug('Could not initialize seasonal theme') }
 })
-onBeforeUnmount(() => { if (timer) clearInterval(timer) })
+onBeforeUnmount(() => { if (timer) clearInterval(timer); window.removeEventListener('storage', onStorage); window.removeEventListener('mintegram-seasonal-change', onSeasonalChange as EventListener) })
 </script>
 
 <style scoped>

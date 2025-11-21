@@ -12,6 +12,7 @@ export type User = {
   level: number
   diamonds: number
   coins: number
+  profile_picture: string | null
   // adaugă aici alte câmpuri relevante
 }
 
@@ -47,11 +48,13 @@ export const useAuth = defineStore('auth', {
     async fetchMe() {
       try {
         const { data } = await api.get('/api/auth/me/')
+        console.log('[AuthStore] fetchMe response:', data)
   this.user = data as User
         // Sincronizează store-ul game cu userul actualizat
         const { useGame } = await import('./game')
         useGame().syncWithUser(data)
-      } catch {
+      } catch (error) {
+        console.error('[AuthStore] fetchMe error:', error)
         this.user = null
       }
     },

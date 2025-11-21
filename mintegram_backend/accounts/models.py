@@ -7,6 +7,7 @@ class User(AbstractUser):
     level = models.IntegerField(default=1)
     diamonds = models.IntegerField(default=0)
     coins = models.IntegerField(default=0)  # Monede pentru shop
+    profile_picture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
 
     def __str__(self):
         return self.username or self.email

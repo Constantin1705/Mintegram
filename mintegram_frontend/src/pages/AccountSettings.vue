@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <q-card>
-      <q-card-section>
+      <!-- <q-card-section>
         <div class="text-h6 q-mb-md">Temă globală</div>
         <div class="row items-center q-col-gutter-md q-mb-md">
           <div class="col-auto">
@@ -10,9 +10,9 @@
           <div class="col-auto">
             <q-btn color="primary" label="Salvează tema" @click="saveTheme" />
           </div>
-        </div>
+        </div> -->
         <div class="text-h5">Setări cont</div>
-      </q-card-section>
+      <!-- </q-card-section> -->
       <q-separator />
       <q-card-section>
         <q-list>
@@ -25,7 +25,11 @@
           <q-item>
             <q-item-section>Temă</q-item-section>
             <q-item-section side>
-              <q-toggle v-model="darkMode" label="Dark mode" />
+              <div class="row items-center q-gutter-sm">
+                <q-toggle v-model="darkMode" label="Dark mode" />
+                <q-select v-model="seasonalTheme" :options="seasonalOptions" dense outlined style="min-width:160px" />
+                <q-btn color="primary" label="Aplică" @click="applySeasonalTheme" />
+              </div>
             </q-item-section>
           </q-item>
           <q-item>
@@ -95,30 +99,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuth } from 'stores/auth';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import axios from 'axios';
 
 
-const theme = ref('light');
-const themeOptions = [ { label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' } ];
+// const theme = ref('light');
+// const themeOptions = [ { label: 'Light', value: 'light' }, { label: 'Dark', value: 'dark' } ];
 
-function saveTheme() {
-  axios.patch('/api/theme-setting/', { theme: theme.value })
-    .then(res => {
-      if (res.data && res.data.theme) {
-        $q.notify({ type: 'positive', message: 'Tema a fost salvată!' });
-        $q.dark.set(res.data.theme === 'dark');
-      } else {
-        $q.notify({ type: 'warning', message: 'Verifică răspunsul API.' });
-      }
-    })
-    .catch(() => {
-      $q.notify({ type: 'negative', message: 'Eroare la salvarea temei.' });
-    });
-}
+// function saveTheme() {
+//   axios.patch('/api/theme-setting/', { theme: theme.value })
+//     .then(res => {
+//       if (res.data && res.data.theme) {
+//         $q.notify({ type: 'positive', message: 'Tema a fost salvată!' });
+//         $q.dark.set(res.data.theme === 'dark');
+//       } else {
+//         $q.notify({ type: 'warning', message: 'Verifică răspunsul API.' });
+//       }
+//     })
+//     .catch(() => {
+//       $q.notify({ type: 'negative', message: 'Eroare la salvarea temei.' });
+//     });
+// }
 
 
 const showPasswordDialog = ref(false);
@@ -174,12 +178,97 @@ const auth = useAuth();
 const router = useRouter();
 const username = ref('');
 const email = ref('');
+const seasonalTheme = ref('')
+const seasonalOptions = [
+  { label: 'Implicită', value: '' },
+  { label: 'Crăciun', value: 'christmas' },
+  { label: 'Paște', value: 'easter' }
+]
+
+function applySeasonalTheme() {
+  // normalize possible object returned by QSelect (could be { label, value })
+  const raw = seasonalTheme.value as unknown
+  let t = ''
+  if (typeof raw === 'string') t = raw.trim()
+  else if (raw && typeof raw === 'object') {
+    // try common keys value/label if present
+    // @ts-expect-error - runtime check below
+    const maybeValue = raw.value ?? raw.label
+    if (typeof maybeValue === 'string') t = maybeValue.trim()
+    else if (typeof maybeValue === 'number') t = String(maybeValue)
+  }
+  // persist selection
+  try {
+    if (t === '') {
+      localStorage.removeItem('mintegram_seasonal_theme')
+    } else {
+      localStorage.setItem('mintegram_seasonal_theme', t)
+    }
+  console.debug('[AccountSettings] persisted seasonal theme ->', t)
+  } catch { console.debug('Could not persist seasonal theme') }
+  // apply global body class
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.remove('theme-christmas', 'theme-easter')
+    if (t === 'christmas') document.body.classList.add('theme-christmas')
+    else if (t === 'easter') document.body.classList.add('theme-easter')
+    // notify other parts of the app in this window
+  }
+  // always dispatch (so same-tab listeners get notified even if document.body check failed)
+  try { window.dispatchEvent(new CustomEvent('mintegram-seasonal-change', { detail: t })) } catch (err) { console.debug('Could not dispatch seasonal-change event', err) }
+  console.debug('[AccountSettings] dispatched mintegram-seasonal-change ->', t)
+  // user feedback (friendly label)
+  const display = t === 'christmas' ? 'Crăciun' : t === 'easter' ? 'Paște' : ''
+  try { $q.notify({ type: 'positive', message: display ? `Tema sezonieră aplicată: ${display}` : 'Tema sezonieră resetată la implicită' }) } catch { console.debug('Could not show notification') }
+}
 
 onMounted(() => {
   if (auth.user) {
     username.value = auth.user.username || '';
     email.value = auth.user.email || '';
   }
+  // initialize dark mode toggle from current Quasar state
+  darkMode.value = $q.dark.isActive;
+  // restore any seasonal theme
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+  const savedRaw = localStorage.getItem('mintegram_seasonal_theme') || ''
+      // normalize: guard against objects or JSON accidentally stored
+      const normalize = (v: unknown) => {
+        if (v == null) return ''
+        if (typeof v !== 'string') return ''
+        const s = v.trim()
+        if (!s) return ''
+        if (s === '[object Object]') return ''
+        if (s.startsWith('{') || s.startsWith('[')) return ''
+        return s
+      }
+      const saved = normalize(savedRaw)
+      console.debug('[AccountSettings] restored seasonal theme from storage ->', { savedRaw, saved })
+      if (saved) {
+        seasonalTheme.value = saved
+        if (document && document.body) {
+          const cls = saved === 'christmas' ? 'theme-christmas' : saved === 'easter' ? 'theme-easter' : ''
+          if (cls) document.body.classList.add(cls)
+        }
+      } else {
+        // cleanup bad stored value
+        if (savedRaw && savedRaw !== '') {
+          try { localStorage.removeItem('mintegram_seasonal_theme') } catch { console.debug('Could not remove invalid seasonal theme') }
+        }
+      }
+    }
+  } catch (err) { console.debug('Could not restore seasonal theme', err) }
+});
+
+// persist and propagate theme changes
+watch(darkMode, (val) => {
+  $q.dark.set(val);
+  try {
+    localStorage.setItem('theme', val ? 'dark' : 'light');
+  } catch {/* ignore storage errors */}
+  // best-effort backend update (optional)
+  axios.patch('/api/theme-setting/', { theme: val ? 'dark' : 'light' })
+    .catch(() => {/* ignore backend errors for UX smoothness */});
 });
 
 function saveProfile() {

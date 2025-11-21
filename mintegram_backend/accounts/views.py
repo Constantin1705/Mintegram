@@ -50,7 +50,7 @@ class LoginView(generics.GenericAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({"access": str(refresh.access_token), "refresh": str(refresh)})
 
-class MeView(generics.RetrieveAPIView):
+class MeView(generics.RetrieveUpdateAPIView):
     serializer_class = MeSerializer
     permission_classes = [permissions.IsAuthenticated]
 

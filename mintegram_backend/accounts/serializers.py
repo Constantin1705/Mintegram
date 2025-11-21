@@ -57,5 +57,5 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "xp", "level", "diamonds", "badges"]
-        read_only_fields = ["xp", "level", "diamonds", "badges"]
+        fields = ["id", "username", "email", "xp", "level", "diamonds", "coins", "profile_picture", "badges"]
+        read_only_fields = ["xp", "level", "diamonds", "coins", "badges"]
