@@ -1,13 +1,16 @@
 <template>
   <div class="flex items-center justify-center">
-    <div
-      ref="container"
-      class="w-64 h-64 select-none"
-      :aria-label="ariaLabel || ''"
-      role="img"
-      @mouseenter="onHover(true)"
-      @mouseleave="onHover(false)"
-    />
+    <div class="mascot-wrapper w-64 h-64">
+      <div class="mascot-hat" aria-hidden="true"></div>
+      <div
+        ref="container"
+        class="w-64 h-64 select-none"
+        :aria-label="ariaLabel || ''"
+        role="img"
+        @mouseenter="onHover(true)"
+        @mouseleave="onHover(false)"
+      />
+    </div>
   </div>
 </template>
 
@@ -103,4 +106,11 @@ function onHover(hovering: boolean) {
 <style scoped>
 /* Optional: responsive sizing via CSS variables */
 :host, .w-64, .h-64 { max-width: 100%; max-height: 100%; }
+
+.mascot-wrapper { position: relative; }
+.mascot-hat { display:none; position:absolute; top:4px; left:50%; transform:translateX(-50%); width:72px; height:42px; }
+.mascot-hat:before { content:''; position:absolute; left:0; right:0; top:0; height:0; width:0; margin:0 auto; border-left:36px solid transparent; border-right:36px solid transparent; border-bottom:42px solid #c62828; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+.mascot-hat:after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); width:80px; height:12px; background:#fff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+body.theme-christmas .mascot-hat { display:block; animation: hatBounce 3s ease-in-out infinite; }
+@keyframes hatBounce { 0%,100% { transform:translate(-50%,0); } 50% { transform:translate(-50%,4px); } }
 </style>

@@ -1,1 +1,45 @@
 // app global css in SCSS form
+
+// Christmas (Crăciun) theme variables & base styling
+body.theme-christmas {
+	--season-primary: #c62828;       // roșu intens
+	--season-primary-alt: #d32f2f;  // roșu accent
+	--season-green: #2e7d32;        // verde brad
+	--season-gold: #c9a009;         // auriu
+	--season-bg-grad: linear-gradient(180deg,#fffdf9 0%,#ffe9e9 55%,#fff5f5 100%);
+	background: var(--season-bg-grad);
+	background-attachment: fixed;
+}
+
+body.theme-christmas .q-header {
+	background: linear-gradient(90deg,#b71c1c,#c62828 35%,#2e7d32 70%,#1b5e20);
+	color: #fff;
+}
+
+body.theme-christmas .q-btn--standard, 
+body.theme-christmas .q-chip, 
+body.theme-christmas .q-badge.color-primary,
+body.theme-christmas .q-btn.color-primary {
+	--q-primary: var(--season-primary);
+}
+
+/* Decorative accent borders for cards in Christmas theme */
+body.theme-christmas .q-card {
+	box-shadow: 0 4px 14px -2px rgba(198,40,40,0.25);
+	border: 1px solid rgba(198,40,40,0.25);
+	backdrop-filter: blur(2px);
+}
+
+/* Garland lights appear only when overlay is rendered (handled in layout) */
+.garland-light { display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 4px; background:#ffd54f; box-shadow:0 0 8px 2px rgba(255,213,79,0.7); animation: twinkle 2.4s infinite ease-in-out; }
+
+@keyframes twinkle { 0%,100% { opacity:0.9; transform:scale(1);} 50% { opacity:0.4; transform:scale(0.6);} }
+
+/* Snow / festive particle animation */
+.particle { position:absolute; top:-40px; border-radius:50%; pointer-events:none; animation: fall linear infinite; filter: drop-shadow(0 0 2px rgba(255,255,255,0.7)); }
+@keyframes fall { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
+
+/* Easter theme (already referenced) minimal styling for completeness */
+body.theme-easter { --season-easter-bg: linear-gradient(180deg,#fffefc,#fff3fa 60%,#fffefc); background: var(--season-easter-bg); }
+body.theme-easter .q-header { background: linear-gradient(90deg,#9575cd,#ba68c8,#64b5f6); color:#fff; }
+

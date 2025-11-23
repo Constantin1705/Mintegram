@@ -97,6 +97,10 @@
             <q-item-section avatar><q-icon name="person_add" /></q-item-section>
             <q-item-section>Dog</q-item-section>
           </q-item>
+          <q-item clickable v-ripple to="/dog-showcase">
+            <q-item-section avatar><q-icon name="pets" /></q-item-section>
+            <q-item-section>Dog Showcase</q-item-section>
+          </q-item>
         </template>
       </q-list>
     </q-drawer>
@@ -236,6 +240,20 @@
         >
           <q-tooltip anchor="bottom middle" self="top middle">
             {{ $q.dark.isActive ? 'Luminos' : 'Întunecat' }}
+          </q-tooltip>
+        </q-btn>
+
+        <!-- Christmas theme quick toggle -->
+        <q-btn
+          flat
+          dense
+          round
+          :icon="seasonalTheme === 'christmas' ? 'holiday_village' : 'celebration'"
+          @click="toggleChristmasTheme"
+          aria-label="Comută tema Crăciun"
+        >
+          <q-tooltip anchor="bottom middle" self="top middle">
+            {{ seasonalTheme === 'christmas' ? 'Crăciun activ' : 'Activează Crăciun' }}
           </q-tooltip>
         </q-btn>
 
@@ -411,6 +429,21 @@ function toggleDark() {
   } catch {/* ignore */}
 }
 
+function toggleChristmasTheme() {
+  // toggle between '' and 'christmas'
+  const next = seasonalTheme.value === 'christmas' ? '' : 'christmas'
+  seasonalTheme.value = next
+  try {
+    if (next) localStorage.setItem('mintegram_seasonal_theme', next)
+    else localStorage.removeItem('mintegram_seasonal_theme')
+  } catch { /* ignore storage errors */ }
+  applyThemeValue(next)
+  // notify user
+  try { $q.notify({ type: 'positive', message: next ? 'Tema de Crăciun activată 🎄' : 'Tema de Crăciun dezactivată' }) } catch { /* ignore */ }
+  // dispatch event for other components in same tab
+  try { window.dispatchEvent(new CustomEvent('mintegram-seasonal-change', { detail: next })) } catch { /* ignore */ }
+}
+
 let timer: number | undefined
 onMounted(async () => {
   drawer.value = false
@@ -446,4 +479,26 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer); window.removeEventListe
   box-shadow: 0 8px 24px 0 rgba(0,0,0,0.18);
   z-index: 2;
 }
+/* Seasonal overlay base */
+.season-overlay { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.season-overlay .particles { position:absolute; inset:0; }
+.season-overlay .particle { position:absolute; top:-40px; border-radius:50%; opacity:0.95; }
+
+/* Christmas specific */
+.christmas-overlay { background: radial-gradient(circle at top left, rgba(255,255,255,0.6), transparent 60%), radial-gradient(circle at top right, rgba(255,255,255,0.4), transparent 55%); }
+.christmas-overlay .garland { position:absolute; top:0; left:0; right:0; height:54px; display:flex; justify-content:center; align-items:flex-end; padding:4px 12px; }
+.christmas-overlay .garland-light { width:14px; height:14px; margin:0 6px; border-radius:50%; background: hsl(var(--h,50) 80% 55%); box-shadow:0 0 8px 3px currentColor; animation: garlandPulse 3s ease-in-out infinite; }
+.christmas-overlay .garland-light:nth-child(4n) { --h: 5; color:#ff5252; }
+.christmas-overlay .garland-light:nth-child(4n+1) { --h: 120; color:#66bb6a; }
+.christmas-overlay .garland-light:nth-child(4n+2) { --h: 45; color:#ffeb3b; }
+.christmas-overlay .garland-light:nth-child(4n+3) { --h: 200; color:#64b5f6; }
+@keyframes garlandPulse { 0%,100% { transform:translateY(0) scale(1); opacity:0.95;} 50% { transform:translateY(4px) scale(0.7); opacity:0.5;} }
+
+/* Easter specific */
+.easter-overlay { background: radial-gradient(circle at 30% 10%, rgba(255,230,250,0.7), transparent 60%), radial-gradient(circle at 70% 15%, rgba(230,240,255,0.6), transparent 65%); }
+.floating-eggs { position:absolute; inset:0; }
+.egg { position:absolute; width:42px; height:54px; border-radius:50% 50% 45% 45%; box-shadow:0 4px 10px -2px rgba(0,0,0,0.18); animation: eggFloat 6s ease-in-out infinite; }
+.egg:nth-child(odd) { animation-duration:7.2s; }
+@keyframes eggFloat { 0%,100% { transform:translateY(0) scale(1);} 50% { transform:translateY(-24px) scale(1.05);} }
+
 </style>

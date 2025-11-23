@@ -21,6 +21,7 @@ const routes = [
       // Dacă homepage-ul tău e public, marchează-l public; dacă vrei să fie protejat, scoate meta.public
       { path: '', name: 'home', component: () => import('pages/HomePage.vue'), meta: { public: true } },
     { path: 'dog', name: 'dog', component: () => import('pages/DogPage.vue'), meta: { public: true } },
+    { path: 'dog-showcase', name: 'dog-showcase', component: () => import('pages/DogShowcase.vue'), meta: { public: true } },
     { path: 'leaderboard', name: 'leaderboard', component: () => import('pages/LeaderboardPage.vue'), meta: { public: true } },
     { path: 'profile', name: 'profile', component: () => import('pages/ProfilePage.vue'), meta: { public: true } },
     { path: 'shop', name: 'shop', component: () => import('pages/ShopPage.vue'), meta: { public: true } },
