@@ -22,8 +22,11 @@ RUN flutter config --enable-web
 
 WORKDIR /app
 
-# Copy the entire application first
+# Copy everything except what's in .dockerignore
 COPY . .
+
+# Verify lib directory exists
+RUN test -f /app/lib/main.dart || (echo "ERROR: lib/main.dart not found" && ls -la /app/ && exit 1)
 
 # Get dependencies
 RUN flutter pub get
