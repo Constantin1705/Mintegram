@@ -101,7 +101,7 @@ services:
   # Flutter Web App
   flutter_app:
     build:
-      context: ./mintegram_flutter_new
+      context: ./mintegram_application
       dockerfile: Dockerfile
     container_name: mintegram_flutter
     ports:
@@ -109,7 +109,7 @@ services:
     environment:
       - FLUTTER_WEB_PORT=8080
     volumes:
-      - ./mintegram_flutter_new:/app
+      - ./mintegram_application:/app
     working_dir: /app
     networks:
       - mintegram_network
