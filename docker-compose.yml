@@ -1,0 +1,122 @@
+services:
+  # PostgreSQL Database (optional, if you want to use it instead of SQLite)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: mintegram_postgres
+  #   environment:
+  #     POSTGRES_DB: mintegram
+  #     POSTGRES_USER: mintegram
+  #     POSTGRES_PASSWORD: mintegram_password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - mintegram_network
+
+  # Django Backend
+  backend:
+    build:
+      context: ./mintegram_backend
+      dockerfile: Dockerfile
+    container_name: mintegram_backend
+    ports:
+      - "8001:8000"
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+      - DJANGO_SETTINGS_MODULE=mintegram.settings
+      # - DATABASE_URL=postgresql://mintegram:mintegram_password@postgres:5432/mintegram
+    volumes:
+      - ./mintegram_backend:/app
+      - ./mintegram_backend/media:/app/media
+    working_dir: /app
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - mintegram_network
+    depends_on:
+      - frontend
+    # Uncomment if using PostgreSQL
+    # depends_on:
+    #   - postgres
+
+  # Quasar Frontend
+  frontend:
+    build:
+      context: ./mintegram_frontend
+      dockerfile: Dockerfile
+    container_name: mintegram_frontend
+    ports:
+      - "9000:9000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8001
+    volumes:
+      - ./mintegram_frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run dev -- --host
+    networks:
+      - mintegram_network
+
+  # Next.js Frontend
+  next_frontend:
+    build:
+      context: ./mintegram_next
+      dockerfile: Dockerfile
+    container_name: mintegram_next
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - NODE_ENV=development
+    volumes:
+      - ./mintegram_next:/app
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app
+    command: npm run dev
+    networks:
+      - mintegram_network
+
+  # React Native / Next.js App
+  rn_app:
+    build:
+      context: ./mintegram_rn
+      dockerfile: Dockerfile
+    container_name: mintegram_rn
+    ports:
+      - "3001:3001"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - NODE_ENV=development
+    volumes:
+      - ./mintegram_rn:/app
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app
+    command: npm run dev -- -p 3001
+    networks:
+      - mintegram_network
+
+  # Flutter Web App
+  flutter_app:
+    build:
+      context: ./mintegram_flutter_new
+      dockerfile: Dockerfile
+    container_name: mintegram_flutter
+    ports:
+      - "8080:8080"
+    environment:
+      - FLUTTER_WEB_PORT=8080
+    volumes:
+      - ./mintegram_flutter_new:/app
+    working_dir: /app
+    networks:
+      - mintegram_network
+
+networks:
+  mintegram_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
