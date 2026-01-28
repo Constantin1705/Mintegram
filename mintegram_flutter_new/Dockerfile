@@ -22,14 +22,23 @@ RUN flutter config --enable-web
 
 WORKDIR /app
 
-# Copy everything except what's in .dockerignore
-COPY . .
+# Copy pubspec files
+COPY pubspec.yaml pubspec.lock* ./
 
-# Debug: List what was copied
-RUN echo "=== Contents of /app ===" && ls -la /app/ && echo "=== Contents of /app/lib ===" && ls -la /app/lib/ 2>&1 || echo "lib directory missing"
+# Copy lib directory
+COPY lib/ ./lib/
 
-# Check if main.dart exists
-RUN if [ -f /app/lib/main.dart ]; then echo "✓ main.dart found"; else echo "✗ main.dart NOT found"; exit 1; fi
+# Copy web directory
+COPY web/ ./web/
+
+# Copy assets if they exist
+COPY assets/ ./assets/ || true
+
+# Debug: Verify files
+RUN echo "=== Checking copied files ===" && \
+    ls -la /app/pubspec.yaml && \
+    ls -la /app/lib/main.dart && \
+    echo "Files copied successfully"
 
 # Get dependencies
 RUN flutter pub get
