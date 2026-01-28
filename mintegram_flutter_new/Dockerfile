@@ -25,8 +25,11 @@ WORKDIR /app
 # Copy everything except what's in .dockerignore
 COPY . .
 
-# Verify lib directory exists
-RUN test -f /app/lib/main.dart || (echo "ERROR: lib/main.dart not found" && ls -la /app/ && exit 1)
+# Debug: List what was copied
+RUN echo "=== Contents of /app ===" && ls -la /app/ && echo "=== Contents of /app/lib ===" && ls -la /app/lib/ 2>&1 || echo "lib directory missing"
+
+# Check if main.dart exists
+RUN if [ -f /app/lib/main.dart ]; then echo "✓ main.dart found"; else echo "✗ main.dart NOT found"; exit 1; fi
 
 # Get dependencies
 RUN flutter pub get
