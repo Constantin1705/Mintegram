@@ -22,14 +22,11 @@ RUN flutter config --enable-web
 
 WORKDIR /app
 
-# Copy pubspec files
-COPY pubspec.yaml pubspec.lock* ./
+# Copy the entire application first
+COPY . .
 
 # Get dependencies
 RUN flutter pub get
-
-# Copy the rest of the application
-COPY . .
 
 # Build Flutter web app
 RUN flutter build web --release
